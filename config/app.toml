@@ -1,0 +1,52 @@
+# log_cfg_file = "config/log.yaml"
+
+[client]
+certfile = "data/client.crt"
+keyfile = "data/client.key"
+trusted_cerfiles = [ "data/imoonshots.com/cert1.pem" ]
+
+# [hostnets]
+# typ = "ip"
+# exp = "127.0.0.1"
+
+[[servers]]
+id = "https"
+# host = "0.0.0.0"
+host = "[::1]"
+port = 8999
+realm = "wallout2"
+on_https = true
+certfile = "data/localhost.crt"
+keyfile = "data/localhost.key"
+
+[[servers]]
+id = "http"
+host = "0.0.0.0"
+port = 8998
+realm = "wallout1"
+on_https = false
+certfile = "data/server.cert"
+keyfile = "data/server.key"
+superior_id = "to_https"
+
+[secure]
+whitelists = []
+# typ = ""
+# exp = ""
+
+[[tunnal.superiors]]
+id = "to_https"
+uri = "https://imoonshots.com:7700"
+# uri = "https://imoonshots.com:7700"
+username = "wo"
+password = "YnRjYXRhZG1pbjp2MEpmWkZ3OHBy"
+
+[[credentials]]
+user = "admin"
+passwd = "gh89"
+
+[[proxy_pass_locations]]
+matcher = "/baidu"
+proxy_pass = "www.baidu.com"
+replace_re = ""
+replace_to = ""

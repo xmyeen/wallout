@@ -1,0 +1,56 @@
+[package]
+name = "wallout"
+version = "0.1.0"
+authors = ["chenyuzhi <chenyuzhi@hikvision.com>"]
+edition = "2018"
+# include = [
+#   "Cargo.toml",
+#   "LICENSE",
+#   "src/**/*"
+# ]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+once_cell = "*"
+base64 = "*"
+config = "*"
+clap = "*"
+serde = "*"
+serde_derive ="*"
+serde_json = "*"
+serde_with = { version = "*", features = ["base64", "chrono", "json"] }
+libloading = "*"
+log = "*"
+log4rs = "*"
+headers = "*"
+http = "*"
+httparse = "*"
+hyper = { version = "*", features = ["full"] }
+hyper-tls = "*"
+hyper-proxy = "*"
+futures = "*"
+futures-util = "*"
+lazy_static = "*"
+unicase = "*"
+regex = "*"
+tokio = { version = "*", features = ["full"] }
+tokio-rustls = "*"
+webpki= "*"
+webpki-roots = "*"
+rustls = "*"
+rustls-pemfile = "*"
+async-stream = "*"
+pnet = "*"
+dns-lookup = "*" 
+
+[dev-dependencies]
+argh = "*"
+
+[lib]
+# crate-type = [staticlib]
+crate-type = ["cdylib", "rlib"]
+name = "wallout"
+
+[[bin]]
+path = "src/main.rs"
+name = "wallout-svr"
