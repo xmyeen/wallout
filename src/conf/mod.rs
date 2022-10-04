@@ -62,8 +62,8 @@ impl ConfigMgr {
     }
 
     pub fn init(&self, app_cfg_file: &str) -> Result<(), AppError> {
-        let mut config = Config::new();
-        config
+        let builder = Config::builder();
+        let config = builder
             .set_default("log_cfg_file", "config/log.yaml").unwrap()
             .set_default("hostnets[0].exp", "127.0.0.1").unwrap()
             .set_default("hostnets[0].typ", "ip").unwrap()
@@ -78,7 +78,8 @@ impl ConfigMgr {
             .set_default("servers[0].on_https", false).unwrap()
             .set_default("servers[0].certfile", "data/server.crt").unwrap()
             .set_default("servers[0].keyfile", "data/server.key").unwrap()
-            .merge(ConfigFile::with_name(app_cfg_file))
+            .add_source(ConfigFile::with_name(app_cfg_file))
+            .build()
             .expect("Load configuration failed");
 
             // Start off by merging in the "default" configuration file
@@ -105,7 +106,7 @@ impl ConfigMgr {
             // println!("debug: {:?}", s.get_bool("debug"));
             // println!("database: {:?}", s.get::<String>("database.url"));
 
-        if let Err(_) = self.app_conf.set(config.try_into().map_err(|e| AppError::RuntimeError(format!("Deserialize configuration failed: {}", e)))?) {
+        if let Err(_) = self.app_conf.set(config.try_deserialize().map_err(|e| AppError::RuntimeError(format!("Deserialize configuration failed: {}", e)))?) {
             error!("Can't set configuration");
         }
 

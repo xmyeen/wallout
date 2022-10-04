@@ -271,7 +271,12 @@ impl Proxier {
     async fn run_on_http(server_conf: &conf::server_conf::ServerConf, rx: oneshot::Receiver<()>) -> Result<(), error::AppError> {
         let proxier = Arc::pin(Proxier::create_one(server_conf)?);
         let intro = proxier.get_introducation();
-        let builder = Server::bind(proxier.get_sock());
+
+        // let builder = Server::bind(proxier.get_sock());
+        let std_listener = std::net::TcpListener::bind(&proxier.get_sock())?;
+        std_listener.set_nonblocking(true)?; //alpine版本会出现TCP DUP ACK的问题，故尝试添加nonblocking试试
+        let builder = Server::from_tcp(std_listener)?;
+
         let builder = builder.http1_title_case_headers(true);
 
         let make_svc = make_service_fn(move |conn:&AddrStream|{
@@ -311,8 +316,12 @@ impl Proxier {
         let intro = proxier.get_introducation();
         let tls_settings = Arc::new(server_conf.load_tls_server_configuration()?);
         let tls_acceptor = TlsAcceptor::from(tls_settings);
-        let tcp_listener = TcpListener::bind(&proxier.get_sock()).await?;
-        // listener.set_nonblocking(true);
+
+        // let tcp_listener = TcpListener::bind(&proxier.get_sock()).await?;
+        let std_listener = std::net::TcpListener::bind(&proxier.get_sock())?;
+        std_listener.set_nonblocking(true)?; //alpine版本会出现TCP DUP ACK的问题，故尝试添加nonblocking试试
+        let tcp_listener = TcpListener::from_std(std_listener)?;
+
         let tls_incoming_stream = Box::pin(stream! {
             loop {
                 match tcp_listener.accept().await {
