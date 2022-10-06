@@ -11,31 +11,51 @@ use crate::util::cert;
 pub struct ClientConf  {
     // pub routes: Vec<(regex::Regex, String)>
     // pub regex_set: regex::RegexSet,
-    pub certfile: String,
-    pub keyfile: String,
+    pub subject_alt_name: String,
+    pub certfile: Option<String>,
+    pub keyfile: Option<String>,
     pub trusted_cerfiles: Vec<String>,
 }
 
 impl ClientConf {
     pub fn load_tls_client_configuration(&self) -> Result<TlsClientConfig, AppError> {
+        let certfile_path_string = self.certfile.as_ref().map(|s| s.as_str()).unwrap_or("data/client.crt").to_string();
+        let keyfile_path_string = self.keyfile.as_ref().map(|s| s.as_str()).unwrap_or("data/client.key").to_string();
+
+        let is_all_found = [certfile_path_string.as_str(), keyfile_path_string.as_str()].iter().all(|s| std::path::Path::new(s).exists());
+
+        let (certfile_path_string, keyfile_path_string) = if !is_all_found {
+            let (c, k) = ("temp/client.crt", "temp/client.key");
+            cert::generate_simple_self_signed_cert_and_key(self.subject_alt_name.as_str(), c, k)?;
+            (c.to_string(), k.to_string())
+        } else {
+            (certfile_path_string, keyfile_path_string)
+        };
+
         // Load public certificate.
         // let certs: Option<Vec<rustls::Certificate>> = self.servers.iter().map(|conf| cert::load_certs(conf.certfile.as_str()).ok() ).flatten().collect();
-        let certs = cert::load_certs(self.certfile.as_str())?;
+        let certs = cert::load_certs(certfile_path_string.as_str())?;
         if  certs.is_empty() {
-            return Err(AppError::ConfigError(format!("No certificates")))?
+            return Err(AppError::ConfigError(format!("No certificates {}", certfile_path_string.as_str())))?
         }
 
         // Load private key.
         // let mut privkeys: Option<Vec<rustls::PrivateKey> = self.servers.iter().map(|conf| cert::load_keys(conf.keyfile.as_str()).ok() ).flatten().collect::<Option<Vec<_>>>();
-        let privkeys = cert::load_keys(self.keyfile.as_str())?;
+        let privkeys = cert::load_keys(keyfile_path_string.as_str())?;
         if privkeys.is_empty() {
-            return Err(AppError::ConfigError(format!("No private keys")))?
+            return Err(AppError::ConfigError(format!("No private keys: {}", keyfile_path_string.as_str())))?
         }
 
         let mut root_cert_store = rustls::RootCertStore::empty();
 
         for trusted_cerfile in &self.trusted_cerfiles {
-            let mut pem = std::io::BufReader::new(std::fs::File::open(trusted_cerfile)?);
+            let certfile_path = std::path::Path::new(trusted_cerfile);
+            if !certfile_path.exists() {
+                println!("Miss '{}' - Skip it", certfile_path.to_str().unwrap_or(""));
+                continue;
+            }
+
+            let mut pem = std::io::BufReader::new(std::fs::File::open(certfile_path)?);
             let trust_anchors = rustls_pemfile::certs(&mut pem)?
                 .into_iter()
                 .map(|cert| {

@@ -14,8 +14,8 @@ pub struct ServerConf  {
     pub port: u32,
     pub realm: String,
     pub on_https: bool,
-    pub certfile: String,
-    pub keyfile: String,
+    pub certfile: Option<String>,
+    pub keyfile: Option<String>,
     pub superior_id: Option<String>,
     pub external_host_name: Option<String>,
 }
@@ -91,17 +91,32 @@ impl ServerConf {
         // });
         // tls.set_protocols(&["h2".into(), "http/1.1".into()]);
         // tls
+        // let certfile_path_string = self.certfile.clone().unwrap_or_else(|| "data/server.cert".to_string());
+        // let keyfile_path_string = self.keyfile.clone().unwrap_or_else(|| "data/server.key".to_string());
+        
+        let certfile_path_string = self.certfile.as_ref().map(|s| s.as_str()).unwrap_or("data/server.crt").to_string();
+        let keyfile_path_string = self.keyfile.as_ref().map(|s| s.as_str()).unwrap_or("data/server.key").to_string();
+
+        let is_all_found = [certfile_path_string.as_str(), keyfile_path_string.as_str()].iter().all(|s| std::path::Path::new(s).exists());
+
+        let (certfile_path_string, keyfile_path_string) = if !is_all_found {
+            let (c, k) = ("temp/server.crt", "temp/server.key");
+            cert::generate_simple_self_signed_cert_and_key(self.external_host_name.as_ref().map(|s| s.as_str()).unwrap_or("localhost"), c, k)?;
+            (c.to_string(), k.to_string())
+        } else {
+            (certfile_path_string, keyfile_path_string)
+        };
 
         // Load public certificate.
-        let certs = cert::load_certs(self.certfile.as_str())?;
+        let certs = cert::load_certs(certfile_path_string.as_str())?;
         if certs.is_empty() {
-            return Err(AppError::ConfigError(format!("No certificates")))?
+            return Err(AppError::ConfigError(format!("No certificates {}", certfile_path_string.as_str())))?
         }
 
         // Load private key.
-        let mut privkeys = cert::load_keys(self.keyfile.as_str())?;
+        let mut privkeys = cert::load_keys(keyfile_path_string.as_str())?;
         if privkeys.is_empty() {
-            return Err(AppError::ConfigError(format!("No private keys")))?
+            return Err(AppError::ConfigError(format!("No private keys {}", keyfile_path_string.as_str())))?
         }
 
         // Do not use client certificate authentication.

@@ -9,7 +9,7 @@ apk add build-base &&
 apk add openssl-dev &&
 apk add curl &&
 curl --proto '=https' -o /tmp/rust-init.sh --tlsv1.2 -sSf https://sh.rustup.rs &&
-sh /tmp/rust-init.sh && 
+sh /tmp/rust-init.sh -y && 
 source \$HOME/.cargo/env &&
 cargo b --release
 sh scripts/make-dist.sh

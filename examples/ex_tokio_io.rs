@@ -1,15 +1,17 @@
 use tokio::io::{ReadBuf};
 use std::net::TcpStream;
 
-struct Priv {
+
+struct Priv<'a> {
     raw: Vec<u8>,
-    buf: ReadBuf,
+    buf: ReadBuf<'a>,
 }
 
-impl Priv {
-    pub fn new() -> Self {
+impl<'a> Priv<'a> {
+    pub fn new(buf: &'a mut [u8]) -> Self {
         Self {
-
+            raw: Vec::new(),
+            buf: ReadBuf::new(buf)
         }
     }
 }

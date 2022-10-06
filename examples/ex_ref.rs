@@ -32,7 +32,8 @@ fn main() {
     {
         x.course.student = &mut x.name;
         // y.course.student = &name.1;
-        std::mem::swap(x, y);
+
+        // std::mem::swap(x, y); //cannot borrow `*x` as mutable more than once at a time second mutable borrow occurs here
     }
 
     // {
@@ -40,5 +41,5 @@ fn main() {
     //     // let y = &mut b;    
     //     std::mem::swap(&mut a, &mut b);
     // }
-    println!("a:{:?} b:{:?}", x, y);
+    // println!("a:{:?} b:{:?}", x, y); //cannot borrow `x` as immutable because it is also borrowed as mutable immutable borrow occurs here
 }

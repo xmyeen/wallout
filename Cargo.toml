@@ -35,6 +35,7 @@ unicase = "*"
 regex = "*"
 tokio = { version = "*", features = ["full"] }
 tokio-rustls = "*"
+rcgen = "*"
 webpki= "*"
 webpki-roots = "*"
 rustls = "*"
